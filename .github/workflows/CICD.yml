@@ -1,0 +1,79 @@
+# This work demonstrates how to use various environments(develpment, staging, production) in github.
+
+name: CI + CD demo pipeline
+
+# Define when the workflow should run, a PR or manually.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+# workflow_dispatch:
+
+# Define some jobs that should run
+
+jobs:
+  # Define a build job
+  Build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Code_scanning
+        run: echo We are linting and scanning our code here
+      - name: Compile-build
+        run: echo We are building
+      - name: Test
+        run: echo We are testing
+      - name: ChecksComplete
+        run: echo Checks complete we can deploy
+  # Build and test have passed successfully
+
+  # Define a deploy to development environment job
+  DeployDev:
+    name: Deploy to Development
+    # job only runs if the event that triggered it was a PR
+    if: github.event_name == 'pull_request'
+    # The job needs build to have passed
+    needs: [Build]
+    runs-on: ubuntu-latest
+    # Define some environment variable
+    environment:
+      # The environment that must match the environment in the repository
+      name: Development
+      url: 'http://myapp.dev.com'
+    steps:
+      - name: Deploy to dev
+        run: echo Your code is been deployed to http://myapp.dev.com
+
+  # Define a deploy to staging environment job
+  DeployStaging:
+    name: Deploy to Staging
+    # job only runs if we are commiting to main
+    if: github.even.ref == 'refs/heads/main'
+    needs: [Build]
+    runs-on: ubuntu-latest
+    # Define some environment variable
+    environment:
+      # The environment that must match the environment in the repository
+      name: Staging
+      url: 'http://myapp.staging.com'
+    steps:
+      - name: Deploy to staging
+        run: echo Your code is been deployed to http://myapp.staging.com
+
+  # Define a deploy to production environment job
+  DeployProduction:
+    name: Deploy to production
+    # job only runs if we code already deployed to staging
+    needs: [DeployStaging]
+    runs-on: ubuntu-latest
+    # Define some environment variable
+    environment:
+      # The environment that must match the environment in the repository
+      name: Production
+      url: 'http://www.myapp.com'
+    steps:
+      - name: Deploy to production
+        run: echo Your code is been deployed to http://www.myapp.com
+
